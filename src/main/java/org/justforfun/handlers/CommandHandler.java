@@ -29,7 +29,8 @@ public class CommandHandler implements CommandExecutor {
             switch (args[0].toLowerCase()) {
                 case "reload":
                     if (sender.hasPermission("justforfun.reload")) {
-                        plugin.getConfigManager().loadConfig();
+                        plugin.getConfigManager().reloadConfig();
+                        plugin.getConfigManager().reloadScoreboardConfig();
                         scoreboardManager.reloadScoreboards();  // Reload scoreboards after config reload
                         sender.sendMessage("Configuration reloaded.");
                     } else {
@@ -44,7 +45,9 @@ public class CommandHandler implements CommandExecutor {
                     String showId = args[1];
                     Player targetShowPlayer = args.length > 2 ? Bukkit.getPlayer(args[2]) : (sender instanceof Player ? (Player) sender : null);
                     if (targetShowPlayer != null) {
-                        return new ToggleScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                        scoreboardManager.showScoreboard(targetShowPlayer, showId);
+                        scoreboardManager.updatePlayerScoreboard(targetShowPlayer, showId);  // Update the scoreboard immediately
+                        sender.sendMessage("Scoreboard " + showId + " shown to " + targetShowPlayer.getName() + ".");
                     } else {
                         sender.sendMessage("Player not found.");
                     }
@@ -52,7 +55,8 @@ public class CommandHandler implements CommandExecutor {
                 case "hide":
                     Player targetHidePlayer = args.length > 1 ? Bukkit.getPlayer(args[1]) : (sender instanceof Player ? (Player) sender : null);
                     if (targetHidePlayer != null) {
-                        return new HideScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                        scoreboardManager.hideScoreboard(targetHidePlayer);
+                        sender.sendMessage("Scoreboard hidden for " + targetHidePlayer.getName() + ".");
                     } else {
                         sender.sendMessage("Player not found.");
                     }

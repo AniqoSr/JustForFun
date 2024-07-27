@@ -4,7 +4,7 @@
   <groupId>org.justforfun</groupId>
   <artifactId>JustForFun</artifactId>
   <name>JustForFun</name>
-  <version>2.0-ALPHA</version>
+  <version>2.0-BISMILLAH-SIGMA</version>
   <build>
     <defaultGoal>clean package</defaultGoal>
     <resources>

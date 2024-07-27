@@ -63,10 +63,12 @@ public class Config {
     }
 
     public void reloadConfig() {
+        this.configFile = new File(this.plugin.getDataFolder(), "config.yml");
         this.config = YamlConfiguration.loadConfiguration(this.configFile);
     }
 
     public void reloadScoreboardConfig() {
+        this.scoreboardConfigFile = new File(this.plugin.getDataFolder(), "scoreboard.yml");
         this.scoreboardConfig = YamlConfiguration.loadConfiguration(this.scoreboardConfigFile);
     }
 }

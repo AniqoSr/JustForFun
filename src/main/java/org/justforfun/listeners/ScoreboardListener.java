@@ -51,8 +51,9 @@ public class ScoreboardListener {
     }
 
     public void reloadScoreboards() {
-        plugin.getConfigManager().reloadScoreboardConfig();
+        plugin.getConfigManager().reloadScoreboardConfig(); // Ensure the file is reloaded from disk
         loadScoreboards();
+        updateAllPlayerScoreboards(); // Update all currently active scoreboards
     }
 
     public Set<String> getScoreboardIds() {
@@ -148,7 +149,6 @@ public class ScoreboardListener {
         }
 
         scoreboards.remove(id);
-
         plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id, null);
         plugin.getConfigManager().saveScoreboardConfig();
 
@@ -181,15 +181,9 @@ public class ScoreboardListener {
     }
 
     public void updatePlayerScoreboard(Player player) {
-        Scoreboard scoreboard = player.getScoreboard();
-        Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
-        if (objective != null) {
-            for (String entry : scoreboard.getEntries()) {
-                String newEntry = PlaceholderUtil.applyPlaceholders(player, entry);
-                int score = objective.getScore(entry).getScore();
-                scoreboard.resetScores(entry);
-                objective.getScore(newEntry).setScore(score);
-            }
+        String id = currentScoreboards.get(player);
+        if (id != null) {
+            updatePlayerScoreboard(player, id);
         }
     }
 
@@ -209,6 +203,14 @@ public class ScoreboardListener {
             }
         }
         player.setScoreboard(scoreboard);
+    }
+
+    public void updateAllPlayerScoreboards() {
+        for (Map.Entry<Player, String> entry : currentScoreboards.entrySet()) {
+            Player player = entry.getKey();
+            String id = entry.getValue();
+            updatePlayerScoreboard(player, id);
+        }
     }
 
     public void saveAllScoreboards() {

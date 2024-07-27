@@ -3,7 +3,6 @@ package org.justforfun.commands;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.justforfun.Main;
 import org.justforfun.listeners.ScoreboardListener;
 
@@ -18,23 +17,17 @@ public class CreateScoreboardCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            if (args.length < 2) {
-                player.sendMessage("Usage: /justforfun create <id>");
-                return true;
-            }
-
-            String id = args[1];
-            if (scoreboardManager.createScoreboard(id)) {
-                player.sendMessage("Scoreboard " + id + " created successfully.");
-            } else {
-                player.sendMessage("Scoreboard with id " + id + " already exists.");
-            }
-            return true;
-        } else {
-            sender.sendMessage("This command can only be run by a player.");
+        if (args.length < 2) {
+            sender.sendMessage("Usage: /justforfun create <id>");
             return true;
         }
+
+        String id = args[1];
+        if (scoreboardManager.createScoreboard(id)) {
+            sender.sendMessage("Scoreboard " + id + " created.");
+        } else {
+            sender.sendMessage("Scoreboard with ID " + id + " already exists.");
+        }
+        return true;
     }
 }
