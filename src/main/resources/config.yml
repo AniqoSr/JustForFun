@@ -1,0 +1,8 @@
+join_commands:
+  - "say Welcome %player%!"
+  - "give %player% diamond 1"
+
+item_held_sound:
+  sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  volume: 0.5
+  pitch: 1.5

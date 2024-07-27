@@ -1,0 +1,6 @@
+scoreboards:
+  peler:
+    title: '&aPeler'
+    lines:
+      - '&bLine 1: %player_name%'
+      - '&cLine 2: %server_online%'

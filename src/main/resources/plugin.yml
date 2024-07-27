@@ -1,0 +1,18 @@
+name: JustForFun
+main: org.justforfun.Main
+version: 2.0-ALPHA
+api-version: 1.20
+commands:
+  justforfun:
+    description: Main command for JustForFun plugin
+    usage: /<command> <subcommand>
+    aliases: [jff]
+    permission: justforfun.use
+    permission-message: You do not have permission to use this command.
+permissions:
+  justforfun.use:
+    description: Allows usage of JustForFun commands
+    default: true
+  justforfun.reload:
+    description: Allows reloading the plugin configuration
+    default: op
