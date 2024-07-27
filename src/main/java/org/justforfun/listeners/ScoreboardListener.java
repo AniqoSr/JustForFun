@@ -124,6 +124,7 @@ public class ScoreboardListener {
 
     public void showScoreboard(Player player, String id) {
         if (scoreboards.containsKey(id)) {
+            hideCurrentScoreboard(player);
             updatePlayerScoreboard(player, id);
             currentScoreboards.put(player, id);
         } else {
@@ -138,8 +139,12 @@ public class ScoreboardListener {
 
     public void hideCurrentScoreboard(Player player) {
         if (currentScoreboards.containsKey(player)) {
-            hideScoreboard(player);
+            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         }
+    }
+
+    public boolean isScoreboardActive(Player player, String id) {
+        return id.equals(currentScoreboards.get(player));
     }
 
     public void updatePlayerScoreboard(Player player) {

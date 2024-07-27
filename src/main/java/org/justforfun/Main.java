@@ -1,14 +1,14 @@
 package org.justforfun;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.justforfun.config.Config;
 import org.justforfun.handlers.CommandHandler;
 import org.justforfun.listeners.CommandTabListener;
 import org.justforfun.listeners.PlayerListener;
 import org.justforfun.listeners.ScoreboardListener;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
     private static Main instance;

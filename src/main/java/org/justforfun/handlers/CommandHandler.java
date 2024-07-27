@@ -43,8 +43,7 @@ public class CommandHandler implements CommandExecutor {
                     String showId = args[1];
                     if (sender instanceof Player) {
                         Player player = (Player) sender;
-                        scoreboardManager.hideCurrentScoreboard(player);
-                        return new ShowScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                        return new ToggleScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                     } else {
                         sender.sendMessage("This command can only be run by a player.");
                     }

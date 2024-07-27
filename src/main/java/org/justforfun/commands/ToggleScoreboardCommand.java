@@ -7,11 +7,11 @@ import org.bukkit.entity.Player;
 import org.justforfun.Main;
 import org.justforfun.listeners.ScoreboardListener;
 
-public class ShowScoreboardCommand implements CommandExecutor {
+public class ToggleScoreboardCommand implements CommandExecutor {
     private final Main plugin;
     private final ScoreboardListener scoreboardManager;
 
-    public ShowScoreboardCommand(Main plugin, ScoreboardListener scoreboardManager) {
+    public ToggleScoreboardCommand(Main plugin, ScoreboardListener scoreboardManager) {
         this.plugin = plugin;
         this.scoreboardManager = scoreboardManager;
     }
@@ -26,8 +26,13 @@ public class ShowScoreboardCommand implements CommandExecutor {
             }
 
             String id = args[1];
-            scoreboardManager.showScoreboard(player, id);
-            player.sendMessage("Scoreboard " + id + " shown.");
+            if (scoreboardManager.isScoreboardActive(player, id)) {
+                scoreboardManager.hideScoreboard(player);
+                player.sendMessage("Scoreboard " + id + " hidden.");
+            } else {
+                scoreboardManager.showScoreboard(player, id);
+                player.sendMessage("Scoreboard " + id + " shown.");
+            }
             return true;
         } else {
             sender.sendMessage("This command can only be run by a player.");
