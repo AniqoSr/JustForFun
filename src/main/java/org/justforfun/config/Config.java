@@ -61,4 +61,12 @@ public class Config {
             this.plugin.getLogger().warning("Could not save scoreboard config to " + this.scoreboardConfigFile.getName());
         }
     }
+
+    public void reloadConfig() {
+        this.config = YamlConfiguration.loadConfiguration(this.configFile);
+    }
+
+    public void reloadScoreboardConfig() {
+        this.scoreboardConfig = YamlConfiguration.loadConfiguration(this.scoreboardConfigFile);
+    }
 }

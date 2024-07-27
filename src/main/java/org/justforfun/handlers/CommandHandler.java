@@ -1,5 +1,6 @@
 package org.justforfun.handlers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,7 +30,7 @@ public class CommandHandler implements CommandExecutor {
                 case "reload":
                     if (sender.hasPermission("justforfun.reload")) {
                         plugin.getConfigManager().loadConfig();
-                        scoreboardManager.loadScoreboards();  // Reload scoreboards after config reload
+                        scoreboardManager.reloadScoreboards();  // Reload scoreboards after config reload
                         sender.sendMessage("Configuration reloaded.");
                     } else {
                         sender.sendMessage("You do not have permission to use this command.");
@@ -37,25 +38,35 @@ public class CommandHandler implements CommandExecutor {
                     return true;
                 case "show":
                     if (args.length < 2) {
-                        sender.sendMessage("Usage: /justforfun show <id>");
+                        sender.sendMessage("Usage: /justforfun show <id> [player]");
                         return true;
                     }
                     String showId = args[1];
-                    if (sender instanceof Player) {
-                        Player player = (Player) sender;
+                    Player targetShowPlayer = args.length > 2 ? Bukkit.getPlayer(args[2]) : (sender instanceof Player ? (Player) sender : null);
+                    if (targetShowPlayer != null) {
                         return new ToggleScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                     } else {
-                        sender.sendMessage("This command can only be run by a player.");
+                        sender.sendMessage("Player not found.");
                     }
                     return true;
                 case "hide":
-                    return new HideScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                    Player targetHidePlayer = args.length > 1 ? Bukkit.getPlayer(args[1]) : (sender instanceof Player ? (Player) sender : null);
+                    if (targetHidePlayer != null) {
+                        return new HideScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                    } else {
+                        sender.sendMessage("Player not found.");
+                    }
+                    return true;
                 case "create":
                     return new CreateScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                 case "setline":
                     return new SetScoreboardLineCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                 case "settitle":
                     return new SetScoreboardTitleCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                case "rename":
+                    return new RenameScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
+                case "delete":
+                    return new DeleteScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                 default:
                     sender.sendMessage("Unknown subcommand.");
                     return true;

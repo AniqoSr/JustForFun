@@ -1,5 +1,6 @@
 package org.justforfun.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,25 +19,26 @@ public class ToggleScoreboardCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            if (args.length < 2) {
-                player.sendMessage("Usage: /justforfun show <id>");
-                return true;
-            }
-
-            String id = args[1];
-            if (scoreboardManager.isScoreboardActive(player, id)) {
-                scoreboardManager.hideScoreboard(player);
-                player.sendMessage("Scoreboard " + id + " hidden.");
-            } else {
-                scoreboardManager.showScoreboard(player, id);
-                player.sendMessage("Scoreboard " + id + " shown.");
-            }
-            return true;
-        } else {
-            sender.sendMessage("This command can only be run by a player.");
+        if (args.length < 2) {
+            sender.sendMessage("Usage: /justforfun show <id> [player]");
             return true;
         }
+
+        String id = args[1];
+        Player targetPlayer = args.length > 2 ? Bukkit.getPlayer(args[2]) : (sender instanceof Player ? (Player) sender : null);
+
+        if (targetPlayer == null) {
+            sender.sendMessage("Player not found.");
+            return true;
+        }
+
+        if (scoreboardManager.isScoreboardActive(targetPlayer, id)) {
+            scoreboardManager.hideScoreboard(targetPlayer);
+            sender.sendMessage("Scoreboard " + id + " hidden for " + targetPlayer.getName() + ".");
+        } else {
+            scoreboardManager.showScoreboard(targetPlayer, id);
+            sender.sendMessage("Scoreboard " + id + " shown for " + targetPlayer.getName() + ".");
+        }
+        return true;
     }
 }

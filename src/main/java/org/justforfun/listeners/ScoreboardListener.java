@@ -50,6 +50,11 @@ public class ScoreboardListener {
         }
     }
 
+    public void reloadScoreboards() {
+        plugin.getConfigManager().reloadScoreboardConfig();
+        loadScoreboards();
+    }
+
     public Set<String> getScoreboardIds() {
         return scoreboards.keySet();
     }
@@ -117,6 +122,34 @@ public class ScoreboardListener {
         }
         lines.set(line, content);
         plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id + ".lines", lines);
+        plugin.getConfigManager().saveScoreboardConfig();
+
+        return true;
+    }
+
+    public boolean renameScoreboard(String oldId, String newId) {
+        if (!scoreboards.containsKey(oldId) || scoreboards.containsKey(newId)) {
+            return false;
+        }
+
+        Scoreboard scoreboard = scoreboards.remove(oldId);
+        scoreboards.put(newId, scoreboard);
+
+        plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + newId, plugin.getConfigManager().getScoreboardConfig().getConfigurationSection("scoreboards." + oldId));
+        plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + oldId, null);
+        plugin.getConfigManager().saveScoreboardConfig();
+
+        return true;
+    }
+
+    public boolean deleteScoreboard(String id) {
+        if (!scoreboards.containsKey(id)) {
+            return false;
+        }
+
+        scoreboards.remove(id);
+
+        plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id, null);
         plugin.getConfigManager().saveScoreboardConfig();
 
         return true;

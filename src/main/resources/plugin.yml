@@ -12,7 +12,13 @@ commands:
 permissions:
   justforfun.use:
     description: Allows usage of JustForFun commands
-    default: true
+    default: op
   justforfun.reload:
     description: Allows reloading the plugin configuration
+    default: op
+  justforfun.rename:
+    description: Allows renaming of scoreboard IDs
+    default: op
+  justforfun.delete:
+    description: Allows deletion of scoreboard IDs
     default: op

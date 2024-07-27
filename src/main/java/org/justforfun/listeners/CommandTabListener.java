@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CommandTabListener implements TabCompleter {
-    private final List<String> subcommands = Arrays.asList("reload", "show", "hide", "create", "setline", "settitle");
+    private final List<String> subcommands = Arrays.asList("reload", "show", "hide", "create", "setline", "settitle", "rename", "delete");
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
@@ -23,8 +23,8 @@ public class CommandTabListener implements TabCompleter {
                     }
                 }
                 return suggestions;
-            } else if (args.length == 2 && (args[0].equalsIgnoreCase("show") || args[0].equalsIgnoreCase("hide") || args[0].equalsIgnoreCase("setline") || args[0].equalsIgnoreCase("settitle"))) {
-                // Suggest IDs of available scoreboards for the 'show', 'hide', 'setline', or 'settitle' subcommands
+            } else if (args.length == 2 && Arrays.asList("show", "hide", "setline", "settitle", "rename", "delete").contains(args[0].toLowerCase())) {
+                // Suggest IDs of available scoreboards for the relevant subcommands
                 return new ArrayList<>(Main.getInstance().getScoreboardManager().getScoreboardIds());
             }
         }

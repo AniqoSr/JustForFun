@@ -1,5 +1,6 @@
 package org.justforfun.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,20 +19,20 @@ public class HideScoreboardCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            if (args.length < 2) {
-                player.sendMessage("Usage: /justforfun hide <id>");
-                return true;
-            }
-
-            String id = args[1];
-            scoreboardManager.hideScoreboard(player);
-            player.sendMessage("Scoreboard " + id + " hidden.");
-            return true;
-        } else {
-            sender.sendMessage("This command can only be run by a player.");
+        if (args.length < 2) {
+            sender.sendMessage("Usage: /justforfun hide [player]");
             return true;
         }
+
+        Player targetPlayer = args.length > 1 ? Bukkit.getPlayer(args[1]) : (sender instanceof Player ? (Player) sender : null);
+
+        if (targetPlayer == null) {
+            sender.sendMessage("Player not found.");
+            return true;
+        }
+
+        scoreboardManager.hideScoreboard(targetPlayer);
+        sender.sendMessage("Scoreboard hidden for " + targetPlayer.getName() + ".");
+        return true;
     }
 }
