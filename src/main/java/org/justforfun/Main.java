@@ -1,6 +1,7 @@
 package org.justforfun;
 
 import org.justforfun.config.Config;
+import org.justforfun.db.DataCenter;
 import org.justforfun.handlers.CommandHandler;
 import org.justforfun.listeners.CommandTabListener;
 import org.justforfun.listeners.PlayerListener;
@@ -13,6 +14,7 @@ public class Main extends JavaPlugin {
     private Config configManager;
     private PlayerListener playerListener;
     private ScoreboardListener scoreboardManager;
+    private DataCenter databaseManager;
 
     @Override
     public void onEnable() {
@@ -21,6 +23,7 @@ public class Main extends JavaPlugin {
         this.configManager = new Config(this);
         this.configManager.loadConfig();
         this.scoreboardManager = new ScoreboardListener(this);
+        this.databaseManager = new DataCenter(this);
         this.playerListener = new PlayerListener();
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 
@@ -60,5 +63,9 @@ public class Main extends JavaPlugin {
 
     public ScoreboardListener getScoreboardManager() {
         return this.scoreboardManager;
+    }
+
+    public DataCenter getDatabaseManager() {
+        return databaseManager;
     }
 }

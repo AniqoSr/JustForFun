@@ -1,7 +1,8 @@
-name: JustForFun
+name: GenoSuperPlugin
 main: org.justforfun.Main
-version: 2.0-BISMILLAH-SIGMA
+version: 2.0-Realese
 api-version: 1.20
+author: [JFF]
 commands:
   justforfun:
     description: Main command for JustForFun plugin

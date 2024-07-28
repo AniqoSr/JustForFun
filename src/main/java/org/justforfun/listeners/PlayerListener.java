@@ -8,11 +8,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.justforfun.config.Config;
 import org.justforfun.Main;
 
 public class PlayerListener implements Listener {
     private final Config configManager = Main.getInstance().getConfigManager();
+    private final Main plugin = Main.getInstance();
 
     public PlayerListener() {
     }
@@ -30,19 +32,32 @@ public class PlayerListener implements Listener {
         } catch (IllegalArgumentException var7) {
             Main.getInstance().getLogger().warning("Invalid sound name '" + soundName + "' in config.yml.");
         }
-
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         String playerName = player.getName();
-        Iterator var4 = this.configManager.getConfig().getStringList("join_commands").iterator();
+        Iterator<String> var4 = this.configManager.getConfig().getStringList("join_commands").iterator();
 
         while(var4.hasNext()) {
-            String command = (String)var4.next();
+            String command = var4.next();
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player%", playerName));
         }
 
+        // Load and show the player's scoreboard
+        String scoreboardId = plugin.getDatabaseManager().getPlayerScoreboard(player.getUniqueId().toString());
+        if (scoreboardId != null) {
+            plugin.getScoreboardManager().showScoreboard(player, scoreboardId);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        String scoreboardId = plugin.getScoreboardManager().getCurrentScoreboardId(player);
+        if (scoreboardId != null) {
+            plugin.getDatabaseManager().savePlayerScoreboard(player.getUniqueId().toString(), scoreboardId);
+        }
     }
 }

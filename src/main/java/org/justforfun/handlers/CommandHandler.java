@@ -32,6 +32,7 @@ public class CommandHandler implements CommandExecutor {
                         plugin.getConfigManager().reloadConfig();
                         plugin.getConfigManager().reloadScoreboardConfig();
                         scoreboardManager.reloadScoreboards();  // Reload scoreboards after config reload
+                        plugin.reloadConfig();
                         sender.sendMessage("Configuration reloaded.");
                     } else {
                         sender.sendMessage("You do not have permission to use this command.");

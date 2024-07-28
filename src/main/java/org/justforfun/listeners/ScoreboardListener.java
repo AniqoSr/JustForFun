@@ -10,11 +10,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.justforfun.Main;
 import org.justforfun.util.PlaceholderUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ScoreboardListener {
     private final Main plugin;
@@ -40,11 +36,8 @@ public class ScoreboardListener {
             Objective objective = scoreboard.registerNewObjective(id, "dummy", ChatColor.translateAlternateColorCodes('&', scoreboardsSection.getString(id + ".title")));
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-            int line = 0;
-            for (String lineContent : scoreboardsSection.getStringList(id + ".lines")) {
-                lineContent = ChatColor.translateAlternateColorCodes('&', lineContent);
-                objective.getScore(lineContent).setScore(line++);
-            }
+            List<String> lines = scoreboardsSection.getStringList(id + ".lines");
+            setScoreboardLines(objective, lines);
 
             scoreboards.put(id, scoreboard);
         }
@@ -52,6 +45,7 @@ public class ScoreboardListener {
 
     public void reloadScoreboards() {
         plugin.getConfigManager().reloadScoreboardConfig(); // Ensure the file is reloaded from disk
+        plugin.reloadConfig(); // Reload config.yml
         loadScoreboards();
         updateAllPlayerScoreboards(); // Update all currently active scoreboards
     }
@@ -101,29 +95,28 @@ public class ScoreboardListener {
             return false;
         }
 
+        if (line < 0 || line >= 20) {
+            return false;
+        }
+
         Scoreboard scoreboard = scoreboards.get(id);
         Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
         if (objective != null) {
-            content = ChatColor.translateAlternateColorCodes('&', content);
-
-            // Hapus skor lama jika ada
-            for (String entry : scoreboard.getEntries()) {
-                if (objective.getScore(entry).getScore() == line) {
-                    scoreboard.resetScores(entry);
-                    break;
-                }
+            // Hapus semua skor sebelum menambahkan yang baru
+            for (String entry : new HashSet<>(scoreboard.getEntries())) {
+                scoreboard.resetScores(entry);
             }
 
-            objective.getScore(content).setScore(line);
-        }
+            List<String> lines = plugin.getConfigManager().getScoreboardConfig().getStringList("scoreboards." + id + ".lines");
+            while (lines.size() <= line) {
+                lines.add("");
+            }
+            lines.set(line, content);
+            setScoreboardLines(objective, lines);
 
-        List<String> lines = plugin.getConfigManager().getScoreboardConfig().getStringList("scoreboards." + id + ".lines");
-        while (lines.size() <= line) {
-            lines.add("");
+            plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id + ".lines", lines);
+            plugin.getConfigManager().saveScoreboardConfig();
         }
-        lines.set(line, content);
-        plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id + ".lines", lines);
-        plugin.getConfigManager().saveScoreboardConfig();
 
         return true;
     }
@@ -195,7 +188,7 @@ public class ScoreboardListener {
         Scoreboard scoreboard = scoreboards.get(id);
         Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
         if (objective != null) {
-            for (String entry : scoreboard.getEntries()) {
+            for (String entry : new HashSet<>(scoreboard.getEntries())) {
                 String newEntry = PlaceholderUtil.applyPlaceholders(player, entry);
                 int score = objective.getScore(entry).getScore();
                 scoreboard.resetScores(entry);
@@ -229,5 +222,20 @@ public class ScoreboardListener {
             }
         }
         plugin.getConfigManager().saveScoreboardConfig();
+    }
+
+    private String getUniqueSuffix(int index) {
+        // Use a unique invisible character based on the index to differentiate lines with the same content
+        return ChatColor.RESET.toString() + ChatColor.values()[index % ChatColor.values().length];
+    }
+
+    private void setScoreboardLines(Objective objective, List<String> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            String lineContent = ChatColor.translateAlternateColorCodes('&', lines.get(i)) + getUniqueSuffix(i);
+            objective.getScore(lineContent).setScore(20 - i);  // Set the score such that line 0 is at the top
+        }
+    }
+    public String getCurrentScoreboardId(Player player) {
+        return currentScoreboards.get(player);
     }
 }
