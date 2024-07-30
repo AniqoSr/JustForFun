@@ -76,6 +76,10 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
+        <repository>
+            <id>betonquest-repo</id>
+            <url>https://nexus.betonquest.org/repository/betonquest/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -95,6 +99,12 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.34.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.betonquest</groupId>
+            <artifactId>betonquest</artifactId>
+            <version>2.1.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

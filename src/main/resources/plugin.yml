@@ -3,23 +3,63 @@ main: org.justforfun.Main
 version: 2.0-Realese
 api-version: 1.20
 author: [JFF]
+softdepend:
+  - PlaceholderAPI
+depend:
+  - BetonQuest
 commands:
   justforfun:
-    description: Main command for JustForFun plugin
+    description: Main command for JustForFun plugin.
     usage: /<command> <subcommand>
     aliases: [jff]
     permission: justforfun.use
     permission-message: You do not have permission to use this command.
-permissions:
-  justforfun.use:
-    description: Allows usage of JustForFun commands
-    default: op
-  justforfun.reload:
-    description: Allows reloading the plugin configuration
-    default: op
-  justforfun.rename:
-    description: Allows renaming of scoreboard IDs
-    default: op
-  justforfun.delete:
-    description: Allows deletion of scoreboard IDs
-    default: op
+    subcommands:
+      reload:
+        description: Reloads the plugin configuration.
+        permission: justforfun.reload
+        usage: /justforfun reload
+      show:
+        description: Show a specific scoreboard to a player.
+        permission: justforfun.show
+        usage: /justforfun show <id> [player]
+      hide:
+        description: Hide a specific scoreboard from a player.
+        permission: justforfun.hide
+        usage: /justforfun hide [player]
+      tempsb:
+        description: Temporary scoreboard commands.
+        usage: /justforfun tempsb <create|hide|setline> [args]
+        subcommands:
+          create:
+            description: Create a temporary scoreboard for a player.
+            usage: /justforfun tempsb create <player>
+            permission: justforfun.tempsb.create
+          hide:
+            description: Hide a temporary scoreboard from a player.
+            usage: /justforfun tempsb hide <player>
+            permission: justforfun.tempsb.hide
+          setline:
+            description: Set a line of the temporary scoreboard for a player.
+            usage: /justforfun tempsb setline <player> <line> <content>
+            permission: justforfun.tempsb.setline
+      create:
+        description: Create a new scoreboard.
+        permission: justforfun.create
+        usage: /justforfun create <id>
+      setline:
+        description: Set a line of a scoreboard.
+        permission: justforfun.setline
+        usage: /justforfun setline <id> <line> <content>
+      settitle:
+        description: Set the title of a scoreboard.
+        permission: justforfun.settitle
+        usage: /justforfun settitle <id> <title>
+      rename:
+        description: Rename a scoreboard.
+        permission: justforfun.rename
+        usage: /justforfun rename <oldId> <newId>
+      delete:
+        description: Delete a scoreboard.
+        permission: justforfun.delete
+        usage: /justforfun delete <id>

@@ -1,6 +1,5 @@
 package org.justforfun.listeners;
 
-import java.util.Iterator;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -9,8 +8,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.justforfun.config.Config;
 import org.justforfun.Main;
+import org.justforfun.config.Config;
+
+import java.util.Iterator;
 
 public class PlayerListener implements Listener {
     private final Config configManager = Main.getInstance().getConfigManager();
@@ -23,8 +24,8 @@ public class PlayerListener implements Listener {
     public void onPlayerItemHeld(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
         String soundName = this.configManager.getConfig().getString("item_held_sound.sound", "UI_BUTTON_CLICK");
-        float volume = (float)this.configManager.getConfig().getDouble("item_held_sound.volume", 1.0);
-        float pitch = (float)this.configManager.getConfig().getDouble("item_held_sound.pitch", 1.0);
+        float volume = (float) this.configManager.getConfig().getDouble("item_held_sound.volume", 1.0);
+        float pitch = (float) this.configManager.getConfig().getDouble("item_held_sound.pitch", 1.0);
 
         try {
             Sound sound = Sound.valueOf(soundName);
@@ -40,16 +41,19 @@ public class PlayerListener implements Listener {
         String playerName = player.getName();
         Iterator<String> var4 = this.configManager.getConfig().getStringList("join_commands").iterator();
 
-        while(var4.hasNext()) {
+        while (var4.hasNext()) {
             String command = var4.next();
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player%", playerName));
         }
 
         // Load and show the player's scoreboard
-        String scoreboardId = plugin.getDatabaseManager().getPlayerScoreboard(player.getUniqueId().toString());
+        String scoreboardId = plugin.getDataCenter().getPlayerScoreboard(player.getUniqueId().toString());
         if (scoreboardId != null) {
             plugin.getScoreboardManager().showScoreboard(player, scoreboardId);
         }
+
+        // Load and show the player's temporary scoreboard
+        plugin.getScoreboardManager().loadTempScoreboard(player);
     }
 
     @EventHandler
@@ -57,7 +61,10 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         String scoreboardId = plugin.getScoreboardManager().getCurrentScoreboardId(player);
         if (scoreboardId != null) {
-            plugin.getDatabaseManager().savePlayerScoreboard(player.getUniqueId().toString(), scoreboardId);
+            plugin.getDataCenter().savePlayerScoreboard(player.getUniqueId().toString(), scoreboardId);
         }
+
+        // Save the player's temporary scoreboard
+        plugin.getScoreboardManager().saveTempScoreboard(player, false); // false to avoid parsing placeholders when saving
     }
 }

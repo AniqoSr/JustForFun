@@ -47,6 +47,11 @@
       <option name="url" value="https://repo1.maven.org/" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="betonquest-repo" />
+      <option name="name" value="betonquest-repo" />
+      <option name="url" value="https://nexus.betonquest.org/repository/betonquest/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="maven-central" />
       <option name="name" value="maven-central" />
       <option name="url" value="https://repo1.maven.org/" />
