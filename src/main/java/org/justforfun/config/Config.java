@@ -15,6 +15,7 @@ public class Config {
 
     public Config(JavaPlugin plugin) {
         this.plugin = plugin;
+        loadConfig();
     }
 
     public void loadConfig() {
@@ -46,22 +47,6 @@ public class Config {
         return this.scoreboardConfig;
     }
 
-    public void saveConfig() {
-        try {
-            this.config.save(this.configFile);
-        } catch (IOException var2) {
-            this.plugin.getLogger().warning("Could not save config to " + this.configFile.getName());
-        }
-    }
-
-    public void saveScoreboardConfig() {
-        try {
-            this.scoreboardConfig.save(this.scoreboardConfigFile);
-        } catch (IOException var2) {
-            this.plugin.getLogger().warning("Could not save scoreboard config to " + this.scoreboardConfigFile.getName());
-        }
-    }
-
     public void reloadConfig() {
         this.configFile = new File(this.plugin.getDataFolder(), "config.yml");
         this.config = YamlConfiguration.loadConfiguration(this.configFile);
@@ -70,5 +55,13 @@ public class Config {
     public void reloadScoreboardConfig() {
         this.scoreboardConfigFile = new File(this.plugin.getDataFolder(), "scoreboard.yml");
         this.scoreboardConfig = YamlConfiguration.loadConfiguration(this.scoreboardConfigFile);
+    }
+
+    public void saveScoreboardConfig() {
+        try {
+            this.scoreboardConfig.save(this.scoreboardConfigFile);
+        } catch (IOException var2) {
+            this.plugin.getLogger().warning("Could not save scoreboard config to " + this.scoreboardConfigFile.getName());
+        }
     }
 }

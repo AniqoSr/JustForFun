@@ -37,34 +37,14 @@ public class CommandHandler implements CommandExecutor {
                 case "reload":
                     plugin.getConfigManager().reloadConfig();
                     plugin.getConfigManager().reloadScoreboardConfig();
-                    scoreboardManager.reloadScoreboards();  // Reload scoreboards after config reload
-                    plugin.reloadConfig();
+                    scoreboardManager.reloadScoreboards();
+                    scoreboardManager.reloadTempScoreboards();
                     sender.sendMessage("Configuration reloaded.");
                     return true;
                 case "show":
-                    if (args.length < 2) {
-                        sender.sendMessage("Usage: /justforfun show <id> [player]");
-                        return true;
-                    }
-                    String showId = args[1];
-                    Player targetShowPlayer = args.length > 2 ? Bukkit.getPlayer(args[2]) : (sender instanceof Player ? (Player) sender : null);
-                    if (targetShowPlayer != null) {
-                        scoreboardManager.showScoreboard(targetShowPlayer, showId);
-                        scoreboardManager.updatePlayerScoreboard(targetShowPlayer, showId);  // Update the scoreboard immediately
-                        sender.sendMessage("Scoreboard " + showId + " shown to " + targetShowPlayer.getName() + ".");
-                    } else {
-                        sender.sendMessage("Player not found.");
-                    }
-                    return true;
+                    return new ShowScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                 case "hide":
-                    Player targetHidePlayer = args.length > 1 ? Bukkit.getPlayer(args[1]) : (sender instanceof Player ? (Player) sender : null);
-                    if (targetHidePlayer != null) {
-                        scoreboardManager.hideScoreboard(targetHidePlayer);
-                        sender.sendMessage("Scoreboard hidden for " + targetHidePlayer.getName() + ".");
-                    } else {
-                        sender.sendMessage("Player not found.");
-                    }
-                    return true;
+                    return new HideScoreboardCommand(plugin, scoreboardManager).onCommand(sender, command, label, args);
                 case "tempsb":
                     if (args.length < 2) {
                         sender.sendMessage("Usage: /justforfun tempsb <create|hide|setline|show> [args]");

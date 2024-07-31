@@ -4,7 +4,7 @@
   <groupId>org.justforfun</groupId>
   <artifactId>GenoSuperPlugin</artifactId>
   <name>JustForFun</name>
-  <version>2.0-Realese</version>
+  <version>2.0-Release</version>
   <build>
     <defaultGoal>clean package</defaultGoal>
     <resources>
@@ -16,15 +16,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <version>3.8.1</version>
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
@@ -32,13 +24,23 @@
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>3.2.4</version>
         <executions>
           <execution>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <filters>
+                <filter>
+                  <artifact>net.seyarada:pandeloot</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -61,10 +63,6 @@
       <id>placeholderapi</id>
       <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
     </repository>
-    <repository>
-      <id>betonquest-repo</id>
-      <url>https://nexus.betonquest.org/repository/betonquest/</url>
-    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -80,9 +78,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.betonquest</groupId>
-      <artifactId>betonquest</artifactId>
-      <version>2.1.2</version>
+      <groupId>net.seyarada</groupId>
+      <artifactId>pandeloot</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.justforfun</groupId>
+      <artifactId>MMTracker</artifactId>
+      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

@@ -8,31 +8,32 @@ import org.bukkit.entity.Player;
 import org.justforfun.Main;
 import org.justforfun.listeners.ScoreboardListener;
 
-public class HideScoreboardCommand implements CommandExecutor {
+public class ShowScoreboardCommand implements CommandExecutor {
     private final Main plugin;
     private final ScoreboardListener scoreboardManager;
 
-    public HideScoreboardCommand(Main plugin, ScoreboardListener scoreboardManager) {
+    public ShowScoreboardCommand(Main plugin, ScoreboardListener scoreboardManager) {
         this.plugin = plugin;
         this.scoreboardManager = scoreboardManager;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length < 2) {
-            sender.sendMessage("Usage: /justforfun hide <player>");
+        if (args.length < 3) {
+            sender.sendMessage("Usage: /justforfun show <id> <player>");
             return true;
         }
 
-        Player targetPlayer = Bukkit.getPlayer(args[1]);
+        String id = args[1];
+        Player targetPlayer = Bukkit.getPlayer(args[2]);
 
         if (targetPlayer == null) {
             sender.sendMessage("Player not found.");
             return true;
         }
 
-        scoreboardManager.hideScoreboard(targetPlayer);
-        sender.sendMessage("Scoreboard hidden for " + targetPlayer.getName() + ".");
+        scoreboardManager.showScoreboard(targetPlayer, id);
+        sender.sendMessage("Scoreboard " + id + " shown for " + targetPlayer.getName() + ".");
         return true;
     }
 }

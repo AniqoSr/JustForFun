@@ -8,21 +8,23 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.justforfun.Main;
-import org.justforfun.db.TempScoreboardData;
 import org.justforfun.util.PlaceholderUtil;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
 
 public class ScoreboardListener {
     private final Main plugin;
     private final Map<String, Scoreboard> scoreboards = new HashMap<>();
     private final Map<Player, String> currentScoreboards = new HashMap<>();
-    private final Map<Player, Scoreboard> tempScoreboards = new HashMap<>();
+    private final Map<Player, String> tempScoreboardIds = new HashMap<>();
+    private final Map<String, Scoreboard> tempScoreboards = new HashMap<>();
 
     public ScoreboardListener(Main plugin) {
         this.plugin = plugin;
         loadScoreboards();
-        loadTempScoreboards();
         startUpdateTask();
     }
 
@@ -49,36 +51,19 @@ public class ScoreboardListener {
 
     public void reloadScoreboards() {
         plugin.getConfigManager().reloadScoreboardConfig();
-        plugin.reloadConfig();
         loadScoreboards();
         updateAllPlayerScoreboards();
     }
 
-    public void loadTempScoreboards() {
-        tempScoreboards.clear();
-        Map<String, TempScoreboardData> tempData = plugin.getTempScoreboardConfig().getTempScoreboards();
-        for (Map.Entry<String, TempScoreboardData> entry : tempData.entrySet()) {
-            String playerId = entry.getKey();
-            TempScoreboardData data = entry.getValue();
-
-            org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
-            Scoreboard scoreboard = manager.getNewScoreboard();
-            Objective objective = scoreboard.registerNewObjective("temp", "dummy", ChatColor.translateAlternateColorCodes('&', data.getTitle()));
-            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-            setScoreboardLines(objective, new ArrayList<>(data.getLines().values()));
-
-            Player player = Bukkit.getPlayer(UUID.fromString(playerId));
-            if (player != null) {
-                tempScoreboards.put(player, scoreboard);
-            }
-        }
-    }
-
     public void reloadTempScoreboards() {
-        plugin.getTempScoreboardConfig().loadUnparsedData();
+        plugin.getTempScoreboardConfig().loadConfig();
         loadTempScoreboards();
         updateTempScoreboards();
+    }
+
+    public void loadTempScoreboards() {
+        // Implement this method to load temp scoreboards from the configuration if necessary
+        // This method can be empty if you only need to handle temp scoreboards in the database
     }
 
     public Set<String> getScoreboardIds() {
@@ -205,13 +190,6 @@ public class ScoreboardListener {
         return id.equals(currentScoreboards.get(player));
     }
 
-    public void updatePlayerScoreboard(Player player) {
-        String id = currentScoreboards.get(player);
-        if (id != null) {
-            updatePlayerScoreboard(player, id);
-        }
-    }
-
     public void updatePlayerScoreboard(Player player, String id) {
         if (!scoreboards.containsKey(id)) {
             return;
@@ -238,65 +216,51 @@ public class ScoreboardListener {
         }
     }
 
-    public void saveAllScoreboards() {
-        ConfigurationSection scoreboardsSection = plugin.getConfigManager().getScoreboardConfig().createSection("scoreboards");
-        for (Map.Entry<String, Scoreboard> entry : scoreboards.entrySet()) {
-            String id = entry.getKey();
-            Scoreboard scoreboard = entry.getValue();
-            Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
-            if (objective != null) {
-                scoreboardsSection.set(id + ".title", objective.getDisplayName());
-                List<String> lines = new ArrayList<>();
-                for (String entryContent : scoreboard.getEntries()) {
-                    lines.add(entryContent);
-                }
-                scoreboardsSection.set(id + ".lines", lines);
-            }
-        }
-        plugin.getConfigManager().saveScoreboardConfig();
-    }
-
     private String getUniqueSuffix(int index) {
         return ChatColor.RESET.toString() + ChatColor.values()[index % ChatColor.values().length];
     }
 
     private void setScoreboardLines(Objective objective, List<String> lines) {
         for (int i = 0; i < lines.size(); i++) {
-            String lineContent = ChatColor.translateAlternateColorCodes('&', lines.get(i)) + getUniqueSuffix(i);
+            String lineContent = PlaceholderUtil.applyPlaceholders(null, ChatColor.translateAlternateColorCodes('&', lines.get(i)) + getUniqueSuffix(i));
             objective.getScore(lineContent).setScore(20 - i);
         }
     }
 
     public void createTempScoreboard(Player player) {
+        String id = generateRandomId();
         org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
         Scoreboard scoreboard = manager.getNewScoreboard();
         String title = plugin.getConfigManager().getConfig().getString("temp_scoreboard.title", "&6Temporary Scoreboard");
-        Objective objective = scoreboard.registerNewObjective("temp", "dummy", ChatColor.translateAlternateColorCodes('&', title));
+        Objective objective = scoreboard.registerNewObjective(id, "dummy", ChatColor.translateAlternateColorCodes('&', title));
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        tempScoreboards.put(player, scoreboard);
+        tempScoreboards.put(id, scoreboard);
+        tempScoreboardIds.put(player, id);
         player.setScoreboard(scoreboard);
 
-        saveTempScoreboard(player, false); // false to avoid parsing placeholders when saving
+        saveTempScoreboard(player);
     }
 
     public void hideTempScoreboard(Player player) {
-        if (tempScoreboards.containsKey(player)) {
+        if (tempScoreboardIds.containsKey(player)) {
             player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-            tempScoreboards.remove(player);
-            plugin.getTempScoreboardConfig().getParsedConfig().set("temp_scoreboards." + player.getUniqueId().toString(), null);
-            plugin.getTempScoreboardConfig().saveConfig();
-            plugin.getTempScoreboardConfig().removeTempScoreboard(player.getUniqueId().toString());
+            String id = tempScoreboardIds.remove(player);
+            tempScoreboards.remove(id);
+            plugin.getTempScoreboardConfig().removeTempScoreboard(id);
+            plugin.getDataCenter().removeTempScoreboardId(player.getUniqueId().toString());
         }
     }
 
     public void setTempScoreboardLine(Player player, int line, String content) {
-        if (!tempScoreboards.containsKey(player)) {
+        if (!tempScoreboardIds.containsKey(player)) {
             return;
         }
 
-        Scoreboard scoreboard = tempScoreboards.get(player);
+        String id = tempScoreboardIds.get(player);
+        Scoreboard scoreboard = tempScoreboards.get(id);
         Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
         if (objective != null) {
+            content = PlaceholderUtil.applyPlaceholders(player, content); // Parse the placeholder
             content = ChatColor.translateAlternateColorCodes('&', content) + getUniqueSuffix(line);
 
             for (String entry : new HashSet<>(scoreboard.getEntries())) {
@@ -308,15 +272,16 @@ public class ScoreboardListener {
 
             objective.getScore(content).setScore(20 - line);
 
-            saveTempScoreboard(player, false); // false to avoid parsing placeholders when saving
+            saveTempScoreboard(player);
         }
     }
 
     public void showTempScoreboard(Player player) {
         loadTempScoreboard(player);
 
-        if (tempScoreboards.containsKey(player)) {
-            Scoreboard scoreboard = tempScoreboards.get(player);
+        if (tempScoreboardIds.containsKey(player)) {
+            String id = tempScoreboardIds.get(player);
+            Scoreboard scoreboard = tempScoreboards.get(id);
             Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
             if (objective != null) {
                 for (String entry : new HashSet<>(scoreboard.getEntries())) {
@@ -333,83 +298,91 @@ public class ScoreboardListener {
     }
 
     public void updateTempScoreboards() {
-        for (Map.Entry<Player, Scoreboard> entry : tempScoreboards.entrySet()) {
+        for (Map.Entry<Player, String> entry : tempScoreboardIds.entrySet()) {
             Player player = entry.getKey();
-            Scoreboard scoreboard = entry.getValue();
-            Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
-            if (objective != null) {
-                for (String entryContent : new HashSet<>(scoreboard.getEntries())) {
-                    String newEntry = PlaceholderUtil.applyPlaceholders(player, entryContent);
-                    int score = objective.getScore(entryContent).getScore();
-                    scoreboard.resetScores(entryContent);
-                    objective.getScore(newEntry).setScore(score);
+            String id = entry.getValue();
+            Scoreboard scoreboard = tempScoreboards.get(id);
+            if (scoreboard != null) {
+                Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
+                if (objective != null) {
+                    for (String entryContent : new HashSet<>(scoreboard.getEntries())) {
+                        String newEntry = PlaceholderUtil.applyPlaceholders(player, entryContent);
+                        int score = objective.getScore(entryContent).getScore();
+                        scoreboard.resetScores(entryContent);
+                        objective.getScore(newEntry).setScore(score);
+                    }
                 }
+                player.setScoreboard(scoreboard);
             }
-            player.setScoreboard(scoreboard);
         }
     }
 
-    public void saveTempScoreboard(Player player, boolean parsePlaceholders) {
-        if (!tempScoreboards.containsKey(player)) {
+    public void saveTempScoreboard(Player player) {
+        if (!tempScoreboardIds.containsKey(player)) {
             return;
         }
 
-        Scoreboard scoreboard = tempScoreboards.get(player);
-        Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
-        if (objective != null) {
-            String title = objective.getDisplayName();
-            Map<Integer, String> lines = new HashMap<>();
-            for (String entry : scoreboard.getEntries()) {
-                int score = objective.getScore(entry).getScore();
-                String line = entry.replace(ChatColor.RESET.toString(), "");
-                if (parsePlaceholders) {
-                    line = PlaceholderUtil.applyPlaceholders(player, line);
+        String id = tempScoreboardIds.get(player);
+        Scoreboard scoreboard = tempScoreboards.get(id);
+        if (scoreboard != null) {
+            Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
+            if (objective != null) {
+                String title = objective.getDisplayName();
+                Map<Integer, String> lines = new HashMap<>();
+                for (String entry : scoreboard.getEntries()) {
+                    int score = objective.getScore(entry).getScore();
+                    String line = entry.replace(ChatColor.RESET.toString(), "");
+                    lines.put(20 - score, line);
                 }
-                lines.put(20 - score, line);
+                StringBuilder linesString = new StringBuilder();
+                for (Map.Entry<Integer, String> entry : lines.entrySet()) {
+                    linesString.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
+                }
+                plugin.getDataCenter().saveTempScoreboard(player.getUniqueId().toString(), id, title, linesString.toString());
             }
-            TempScoreboardData data = new TempScoreboardData(title, lines);
-            plugin.getTempScoreboardConfig().setTempScoreboard(player.getUniqueId().toString(), data);
-
-            // Save parsed data to tempsbdata.yml
-            plugin.getTempScoreboardConfig().getParsedConfig().set("temp_scoreboards." + player.getUniqueId().toString() + ".title", title);
-            List<String> parsedLines = new ArrayList<>();
-            for (Map.Entry<Integer, String> entry : lines.entrySet()) {
-                parsedLines.add(entry.getKey() + ":" + entry.getValue());
-            }
-            plugin.getTempScoreboardConfig().getParsedConfig().set("temp_scoreboards." + player.getUniqueId().toString() + ".lines", parsedLines);
-            plugin.getTempScoreboardConfig().saveConfig();
         }
     }
 
     public void loadTempScoreboard(Player player) {
-        TempScoreboardData data = plugin.getTempScoreboardConfig().getTempScoreboard(player.getUniqueId().toString());
-        if (data != null) {
-            org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
-            Scoreboard scoreboard = manager.getNewScoreboard();
-            Objective objective = scoreboard.registerNewObjective("temp", "dummy", ChatColor.translateAlternateColorCodes('&', data.getTitle()));
-            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        ResultSet rs = plugin.getDataCenter().getTempScoreboard(player.getUniqueId().toString());
+        if (rs != null) {
+            try {
+                if (rs.next()) {
+                    String id = rs.getString("temp_scoreboard_id");
+                    String title = rs.getString("title");
+                    String linesString = rs.getString("lines");
 
-            for (Map.Entry<Integer, String> entry : data.getLines().entrySet()) {
-                int score = entry.getKey();
-                String content = ChatColor.translateAlternateColorCodes('&', entry.getValue()) + getUniqueSuffix(score);
-                objective.getScore(content).setScore(20 - score);
+                    org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
+                    Scoreboard scoreboard = manager.getNewScoreboard();
+                    Objective objective = scoreboard.registerNewObjective(id, "dummy", ChatColor.translateAlternateColorCodes('&', title));
+                    objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+                    String[] linesArray = linesString.split(";");
+                    for (String line : linesArray) {
+                        String[] parts = line.split(":");
+                        int score = Integer.parseInt(parts[0]);
+                        String content = PlaceholderUtil.applyPlaceholders(player, parts[1]); // Parse the placeholder
+                        content = ChatColor.translateAlternateColorCodes('&', content) + getUniqueSuffix(score);
+                        objective.getScore(content).setScore(20 - score);
+                    }
+
+                    tempScoreboards.put(id, scoreboard);
+                    tempScoreboardIds.put(player, id);
+                    player.setScoreboard(scoreboard);
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not load player temp scoreboard", e);
             }
-
-            tempScoreboards.put(player, scoreboard);
-            player.setScoreboard(scoreboard);
         }
     }
 
-    public String getCurrentScoreboardId(Player player) {
-        return currentScoreboards.get(player);
-    }
-
     private void startUpdateTask() {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateTempScoreboards, 0L, 15L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateTempScoreboards, 0L, 300L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateAllPlayerScoreboards, 0L, 200L);
     }
 
     // Save the current scoreboard ID of the player
-    public void savePlayerScoreboard(Player player) {
+    private void savePlayerScoreboard(Player player) {
         String uuid = player.getUniqueId().toString();
         String scoreboardId = currentScoreboards.get(player);
 
@@ -424,5 +397,14 @@ public class ScoreboardListener {
         if (scoreboardId != null && scoreboards.containsKey(scoreboardId)) {
             showScoreboard(player, scoreboardId);
         }
+    }
+
+    // Get the current scoreboard ID of the player
+    public String getCurrentScoreboardId(Player player) {
+        return currentScoreboards.get(player);
+    }
+
+    private String generateRandomId() {
+        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 6);
     }
 }

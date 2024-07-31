@@ -47,10 +47,7 @@ public class PlayerListener implements Listener {
         }
 
         // Load and show the player's scoreboard
-        String scoreboardId = plugin.getDataCenter().getPlayerScoreboard(player.getUniqueId().toString());
-        if (scoreboardId != null) {
-            plugin.getScoreboardManager().showScoreboard(player, scoreboardId);
-        }
+        plugin.getScoreboardManager().loadPlayerScoreboard(player);
 
         // Load and show the player's temporary scoreboard
         plugin.getScoreboardManager().loadTempScoreboard(player);
@@ -65,6 +62,6 @@ public class PlayerListener implements Listener {
         }
 
         // Save the player's temporary scoreboard
-        plugin.getScoreboardManager().saveTempScoreboard(player, false); // false to avoid parsing placeholders when saving
+        plugin.getScoreboardManager().saveTempScoreboard(player);
     }
 }
