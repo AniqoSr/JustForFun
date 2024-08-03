@@ -43,7 +43,7 @@ public class ScoreboardListener {
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
             List<String> lines = scoreboardsSection.getStringList(id + ".lines");
-            setScoreboardLines(objective, lines);
+            setScoreboardLines(objective, lines, null);
 
             scoreboards.put(id, scoreboard);
         }
@@ -118,16 +118,12 @@ public class ScoreboardListener {
         Scoreboard scoreboard = scoreboards.get(id);
         Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
         if (objective != null) {
-            for (String entry : new HashSet<>(scoreboard.getEntries())) {
-                scoreboard.resetScores(entry);
-            }
-
             List<String> lines = plugin.getConfigManager().getScoreboardConfig().getStringList("scoreboards." + id + ".lines");
             while (lines.size() <= line) {
                 lines.add("");
             }
             lines.set(line, content);
-            setScoreboardLines(objective, lines);
+            setScoreboardLines(objective, lines, null);
 
             plugin.getConfigManager().getScoreboardConfig().set("scoreboards." + id + ".lines", lines);
             plugin.getConfigManager().saveScoreboardConfig();
@@ -198,12 +194,8 @@ public class ScoreboardListener {
         Scoreboard scoreboard = scoreboards.get(id);
         Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
         if (objective != null) {
-            for (String entry : new HashSet<>(scoreboard.getEntries())) {
-                String newEntry = PlaceholderUtil.applyPlaceholders(player, entry);
-                int score = objective.getScore(entry).getScore();
-                scoreboard.resetScores(entry);
-                objective.getScore(newEntry).setScore(score);
-            }
+            List<String> lines = plugin.getConfigManager().getScoreboardConfig().getStringList("scoreboards." + id + ".lines");
+            setScoreboardLines(objective, lines, player);
         }
         player.setScoreboard(scoreboard);
     }
@@ -220,9 +212,19 @@ public class ScoreboardListener {
         return ChatColor.RESET.toString() + ChatColor.values()[index % ChatColor.values().length];
     }
 
-    private void setScoreboardLines(Objective objective, List<String> lines) {
+    private void setScoreboardLines(Objective objective, List<String> lines, Player player) {
+        // Reset existing scores
+        for (String entry : new HashSet<>(objective.getScoreboard().getEntries())) {
+            objective.getScoreboard().resetScores(entry);
+        }
+
+        // Add new lines
         for (int i = 0; i < lines.size(); i++) {
-            String lineContent = PlaceholderUtil.applyPlaceholders(null, ChatColor.translateAlternateColorCodes('&', lines.get(i)) + getUniqueSuffix(i));
+            String lineContent = lines.get(i);
+            if (player != null) {
+                lineContent = PlaceholderUtil.applyPlaceholders(player, lineContent);
+            }
+            lineContent = ChatColor.translateAlternateColorCodes('&', lineContent) + getUniqueSuffix(i);
             objective.getScore(lineContent).setScore(20 - i);
         }
     }
@@ -284,7 +286,8 @@ public class ScoreboardListener {
             Scoreboard scoreboard = tempScoreboards.get(id);
             Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
             if (objective != null) {
-                for (String entry : new HashSet<>(scoreboard.getEntries())) {
+                List<String> entries = new ArrayList<>(scoreboard.getEntries());
+                for (String entry : entries) {
                     String newEntry = PlaceholderUtil.applyPlaceholders(player, entry);
                     int score = objective.getScore(entry).getScore();
                     scoreboard.resetScores(entry);
@@ -305,7 +308,8 @@ public class ScoreboardListener {
             if (scoreboard != null) {
                 Objective objective = scoreboard.getObjective(DisplaySlot.SIDEBAR);
                 if (objective != null) {
-                    for (String entryContent : new HashSet<>(scoreboard.getEntries())) {
+                    List<String> entries = new ArrayList<>(scoreboard.getEntries());
+                    for (String entryContent : entries) {
                         String newEntry = PlaceholderUtil.applyPlaceholders(player, entryContent);
                         int score = objective.getScore(entryContent).getScore();
                         scoreboard.resetScores(entryContent);
@@ -377,8 +381,8 @@ public class ScoreboardListener {
     }
 
     private void startUpdateTask() {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateTempScoreboards, 0L, 300L);
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateAllPlayerScoreboards, 0L, 200L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateTempScoreboards, 0L, 20L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::updateAllPlayerScoreboards, 0L, 20L);
     }
 
     // Save the current scoreboard ID of the player

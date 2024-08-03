@@ -83,12 +83,6 @@
       <version>1.0.0</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>net.justforfun</groupId>
-      <artifactId>MMTracker</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <properties>
     <java.version>17</java.version>

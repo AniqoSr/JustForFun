@@ -1,5 +1,7 @@
 package org.justforfun;
 
+import net.justforfun.MMTracker.placeholders.MMTrackerPlaceholder;
+import net.justforfun.MMTracker.storage.Database;
 import org.justforfun.config.Config;
 import org.justforfun.db.DataCenter;
 import org.justforfun.db.TempScoreboardConfig;
@@ -7,6 +9,7 @@ import org.justforfun.handlers.CommandHandler;
 import org.justforfun.listeners.CommandTabListener;
 import org.justforfun.listeners.PlayerListener;
 import org.justforfun.listeners.ScoreboardListener;
+import org.justforfun.util.PlaceholderUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,6 +36,8 @@ public class Main extends JavaPlugin {
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             this.getLogger().info("PlaceholderAPI found and hooked.");
+            // Initialize PlaceholderUtil with PlaceholderAPIUtil from MMTracker
+            PlaceholderUtil.setMMTrackerDatabase(new Database(net.justforfun.MMTracker.Main.getInstance()));
         } else {
             this.getLogger().warning("PlaceholderAPI not found. Placeholders will not be parsed.");
         }

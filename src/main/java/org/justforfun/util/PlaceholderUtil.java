@@ -1,7 +1,9 @@
 package org.justforfun.util;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.justforfun.MMTracker.storage.Database;
 import net.seyarada.pandeloot.trackers.DamageBoard;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -13,8 +15,15 @@ public class PlaceholderUtil {
     private static final Pattern BETONQUEST_PLACEHOLDER_PATTERN = Pattern.compile("<betonquest_(.*?):(objective|point)\\.(.*?)\\.(amount|total)>");
     private static final Pattern CUSTOM_PLACEHOLDER_PATTERN = Pattern.compile("<(player\\.(name|damage))>");
     private static final Pattern MODIFIABLE_PLACEHOLDER_PATTERN = Pattern.compile("<(\\d+)\\.(name|damage|percent|ratio)>");
+    private static final Pattern MMTRACK_PLACEHOLDER_PATTERN = Pattern.compile("<mmtrack_(topname|topdamage)_(.*?)_(\\d+)>");
 
-    public static String applyPlaceholders(Player player, String text) {
+    private static Database mmTrackerDatabase;
+
+    public static void setMMTrackerDatabase(Database database) {
+        mmTrackerDatabase = database;
+    }
+
+    public static String applyPlaceholders(OfflinePlayer player, String text) {
         // First apply internal placeholders
         text = applyInternalPlaceholders(player, text);
 
@@ -22,13 +31,15 @@ public class PlaceholderUtil {
         return PlaceholderAPI.setPlaceholders(player, text);
     }
 
-    private static String applyInternalPlaceholders(Player player, String text) {
+    private static String applyInternalPlaceholders(OfflinePlayer player, String text) {
         text = convertBetonQuestPlaceholders(player, text);
         text = convertCustomPlaceholders(player, text);
-        return convertModifiablePlaceholders(player, text);
+        text = convertModifiablePlaceholders(player, text);
+        text = convertMMTrackerPlaceholders(player, text);
+        return text;
     }
 
-    private static String convertBetonQuestPlaceholders(Player player, String text) {
+    private static String convertBetonQuestPlaceholders(OfflinePlayer player, String text) {
         Matcher matcher = BETONQUEST_PLACEHOLDER_PATTERN.matcher(text);
         StringBuffer buffer = new StringBuffer();
 
@@ -52,7 +63,7 @@ public class PlaceholderUtil {
         return buffer.toString();
     }
 
-    private static String convertCustomPlaceholders(Player player, String text) {
+    private static String convertCustomPlaceholders(OfflinePlayer player, String text) {
         Matcher matcher = CUSTOM_PLACEHOLDER_PATTERN.matcher(text);
         StringBuffer buffer = new StringBuffer();
 
@@ -70,7 +81,7 @@ public class PlaceholderUtil {
         return buffer.toString();
     }
 
-    private static String convertModifiablePlaceholders(Player player, String text) {
+    private static String convertModifiablePlaceholders(OfflinePlayer player, String text) {
         Matcher matcher = MODIFIABLE_PLACEHOLDER_PATTERN.matcher(text);
         StringBuffer buffer = new StringBuffer();
 
@@ -89,12 +100,32 @@ public class PlaceholderUtil {
         return buffer.toString();
     }
 
+    private static String convertMMTrackerPlaceholders(OfflinePlayer player, String text) {
+        Matcher matcher = MMTRACK_PLACEHOLDER_PATTERN.matcher(text);
+        StringBuffer buffer = new StringBuffer();
+
+        while (matcher.find()) {
+            String fullPlaceholder = matcher.group(0);
+            String type = matcher.group(1);
+            String mobType = matcher.group(2);
+            int rank = Integer.parseInt(matcher.group(3));
+
+            // Apply MMTracker logic for handling placeholders
+            String value = applyMMTrackerPlaceholder(player, type, mobType, rank);
+
+            matcher.appendReplacement(buffer, value != null ? value : "N/A");
+        }
+
+        matcher.appendTail(buffer);
+        return buffer.toString();
+    }
+
     private static String convertToPlaceholderAPIFormat(String customPart, String type, String customObjective, String detail) {
         // Customize the conversion logic based on your needs
         return "betonquest_" + customPart + ":" + type + "." + customObjective + "." + detail;
     }
 
-    private static String applyCustomPlaceholder(Player player, String placeholder) {
+    private static String applyCustomPlaceholder(OfflinePlayer player, String placeholder) {
         switch (placeholder) {
             case "player.name":
                 return player.getName();
@@ -105,13 +136,13 @@ public class PlaceholderUtil {
         }
     }
 
-    private static String applyModifiablePlaceholder(Player player, int rank, String placeholderType) {
+    private static String applyModifiablePlaceholder(OfflinePlayer player, int rank, String placeholderType) {
         for (DamageBoard board : DamageBoard.damageBoards.values()) {
             if (rank < board.getSortedPlayers().size()) {
                 Map.Entry<UUID, Double> entry = board.getSortedPlayers().get(rank);
                 switch (placeholderType) {
                     case "name":
-                        Player rankedPlayer = player.getServer().getPlayer(entry.getKey());
+                        Player rankedPlayer = player.isOnline() ? ((Player) player.getPlayer()) : null;
                         return rankedPlayer != null ? rankedPlayer.getName() : "Unknown";
                     case "damage":
                         return String.valueOf(entry.getValue());
@@ -127,7 +158,21 @@ public class PlaceholderUtil {
         return "N/A";
     }
 
-    private static String getPlayerDamage(Player player) {
+    private static String applyMMTrackerPlaceholder(OfflinePlayer player, String type, String mobType, int rank) {
+        if (mmTrackerDatabase == null) {
+            return "N/A";
+        }
+
+        if (type.equals("topname")) {
+            return mmTrackerDatabase.getTopPlayerName(mobType, rank);
+        } else if (type.equals("topdamage")) {
+            return String.valueOf(mmTrackerDatabase.getTopPlayerDamage(mobType, rank));
+        }
+
+        return "N/A";
+    }
+
+    private static String getPlayerDamage(OfflinePlayer player) {
         UUID playerUUID = player.getUniqueId();
         for (DamageBoard board : DamageBoard.damageBoards.values()) {
             for (Map.Entry<UUID, Double> entry : board.playersAndDamage.entrySet()) {
